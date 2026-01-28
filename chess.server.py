@@ -1,4 +1,3 @@
-#server.py
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 import json
@@ -15,40 +14,49 @@ board = [
  ["R","N","B","Q","K","B","N","R"]
 ]
 
-clients=[]
-turn=True  # white
+clients = []
+turn = True 
 
 def broadcast(data):
-    msg=json.dumps(data).encode()
-    for c in clients:
-        c.send(msg)
+    msg = json.dumps(data).encode()
+    for c in clients[:]:
+        try:
+            c.send(msg)
+        except:
+            clients.remove(c)
 
 def handle(client, idx):
     global turn
     while True:
-        data=json.loads(client.recv(1024).decode())
-        if idx!=turn: continue
+        try:
+            raw = client.recv(1024)
+            if not raw: break
+            data = json.loads(raw.decode())
+            if idx != turn: continue
 
-        r1,c1,r2,c2=data
-        if (r2,c2) in moves(board,r1,c1):
-            board[r2][c2]=board[r1][c1]
-            board[r1][c1]=""
-            turn=not turn
+            r1, c1, r2, c2 = data
+            if (r2, c2) in moves(board, r1, c1):
+                board[r2][c2] = board[r1][c1]
+                board[r1][c1] = ""
+                turn = not turn
+                state = {"board": board, "turn": turn}
+                if mate(board, turn): state["mate"] = True
+                broadcast(state)
+        except:
+            break
+    if client in clients: clients.remove(client)
+    client.close()
 
-            state={"board":board,"turn":turn}
-            if mate(board,turn):
-                state["mate"]=True
-            broadcast(state)
-
-s=socket(AF_INET,SOCK_STREAM)
-s.bind(("0.0.0.0",5555))
+s = socket(AF_INET, SOCK_STREAM)
+s.bind(("127.0.0.1", 8081))
 s.listen(2)
-print("Server started")
+print("Server started on 8081")
 
-while len(clients)<2:
-    c,_=s.accept()
+while len(clients) < 2:
+    c, _ = s.accept()
     clients.append(c)
-    Thread(target=handle,args=(c,len(clients)-1),daemon=True).start()
-    print("Client connected")
+    Thread(target=handle, args=(c, len(clients)-1), daemon=True).start()
+    print(f"Client {len(clients)} connected")
 
-broadcast({"board":board,"turn":turn})
+broadcast({"board": board, "turn": turn})
+while True: pass 
