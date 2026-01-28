@@ -1,4 +1,4 @@
-#chess_logic.py
+
 def is_white(p): return p.isupper()
 def clone(b): return [r[:] for r in b]
 
