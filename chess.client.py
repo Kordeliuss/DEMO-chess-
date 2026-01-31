@@ -3,8 +3,26 @@ from socket import socket, AF_INET, SOCK_STREAM
 
 pygame.init()
 WIN = pygame.display.set_mode((640, 640))
-FONT = pygame.font.SysFont("arial", 48)
-SQ = 80
+
+P1=pygame.transform.scale(pygame.image.load('images/P1.png'),(80,90))
+R1=pygame.transform.scale(pygame.image.load('images/R1.png'),(80,90))
+K1=pygame.transform.scale(pygame.image.load('images/K1.png'),(80,90))
+Q1=pygame.transform.scale(pygame.image.load('images/Q1.png'),(80,90))
+B1=pygame.transform.scale(pygame.image.load('images/B1.png'),(80,90))
+N1=pygame.transform.scale(pygame.image.load('images/N1.png'),(80,90))
+
+P2=pygame.transform.scale(pygame.image.load('images/P1.png'),(80,90))
+R2=pygame.transform.scale(pygame.image.load('images/R1.png'),(80,90))
+K2=pygame.transform.scale(pygame.image.load('images/K1.png'),(80,90))
+Q2=pygame.transform.scale(pygame.image.load('images/Q1.png'),(80,90))
+B2=pygame.transform.scale(pygame.image.load('images/B1.png'),(80,90))
+N2=pygame.transform.scale(pygame.image.load('images/N1.png'),(80,90))
+
+HYB={
+    "p":P1,"r":R1,"k":K1,"q":Q1,"b":B1,"n":N1,
+    "P":P2,"R":R2,"K":K2,"Q":Q2,"B":B2,"N":N2
+}
+
 
 s = socket(AF_INET, SOCK_STREAM)
 s.connect(("127.0.0.1", 8081))
@@ -16,7 +34,7 @@ def receive():
     global board
     while True:
         try:
-            data = s.recv(2048).decode()
+            data = s.recv(4096).decode()
             if data:
                 msg = json.loads(data)
                 board = msg["board"]
@@ -25,15 +43,15 @@ def receive():
 threading.Thread(target=receive, daemon=True).start()
 
 def draw():
-    WIN.fill((0,0,0))
     for r in range(8):
         for c in range(8):
             col = (240, 217, 181) if (r + c) % 2 == 0 else (181, 136, 99)
             if selected == (r, c): col = (200, 255, 200)
-            pygame.draw.rect(WIN, col, (c * SQ, r * SQ, SQ, SQ))
-            if board[r][c]:
-                t = FONT.render(board[r][c], 1, (0, 0, 0))
-                WIN.blit(t, (c * SQ + 25, r * SQ + 20))
+            pygame.draw.rect(WIN, col, (c * 80, r * 80, 80, 80))
+            char = board[r][c]
+            if char in HYB:
+
+                WIN.blit(HYB[char], (c * 80, r * 80))
 
 run = True
 while run:
@@ -42,7 +60,7 @@ while run:
     for e in pygame.event.get():
         if e.type == pygame.QUIT: run = False
         if e.type == pygame.MOUSEBUTTONDOWN:
-            r, c = e.pos[1] // SQ, e.pos[0] // SQ
+            r, c = e.pos[1] // 80, e.pos[0] // 80
             if selected:
                 s.send(json.dumps([*selected, r, c]).encode())
                 selected = None
